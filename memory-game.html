@@ -5,14 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memory Game</title>
     <style>
-        /* Reset default styles and set up CSS custom properties for theming */
+        /* Light theme defaults */
         :root {
             --primary-color: #2196f3;
+            --primary-color-hover: #1565c0;
+            --primary-color-active: #0d47a1;
             --background-color: #f5f5f5;
+            --panel-background: #ffffff;
+            --panel-shadow: rgba(0, 0, 0, 0.1);
             --card-back: #1976d2;
+            --card-back-text: #ffffff;
             --card-front: #ffffff;
+            --card-front-text: #1f2937;
             --text-color: #333333;
+            --muted-text: #4b5563;
             --success-color: #4caf50;
+            --modal-overlay: rgba(0,0,0,0.5);
+            --modal-content-background: #ffffff;
+            --button-text: #ffffff;
+        }
+
+        body.theme-dark {
+            --primary-color: #60a5fa;
+            --primary-color-hover: #3b82f6;
+            --primary-color-active: #1d4ed8;
+            --background-color: #111827;
+            --panel-background: #1f2937;
+            --panel-shadow: rgba(0, 0, 0, 0.45);
+            --card-back: #0f172a;
+            --card-back-text: #e2e8f0;
+            --card-front: #1f2937;
+            --card-front-text: #f3f4f6;
+            --text-color: #f3f4f6;
+            --muted-text: #d1d5db;
+            --success-color: #4ade80;
+            --modal-overlay: rgba(2,6,23,0.7);
+            --modal-content-background: #1f2937;
+            --button-text: #f9fafb;
         }
 
         * {
@@ -29,6 +58,7 @@
             line-height: 1.6;
             padding: 20px;
             min-height: 100vh;
+            transition: background-color 0.2s ease, color 0.2s ease;
         }
 
         /* Main container with max-width for larger screens */
@@ -54,10 +84,10 @@
             justify-content: space-around;
             flex-wrap: wrap;
             gap: 1rem;
-            background: white;
+            background: var(--panel-background);
             padding: 1rem;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px var(--panel-shadow);
             margin-bottom: 2rem;
         }
 
@@ -81,18 +111,22 @@
             border: none;
             border-radius: 4px;
             background: var(--primary-color);
-            color: white;
+            color: var(--button-text);
             cursor: pointer;
             font-size: 1rem;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, opacity 0.2s ease;
         }
 
         button:hover {
-            background-color: #1565c0;
+            background-color: var(--primary-color-hover);
         }
 
         button.active {
-            background-color: #0d47a1;
+            background-color: var(--primary-color-active);
+        }
+
+        .theme-toggle {
+            min-width: 120px;
         }
 
         /* Game grid styles with responsive layout */
@@ -151,12 +185,13 @@
 
         .card-front {
             background: var(--card-front);
+            color: var(--card-front-text);
             transform: rotateY(180deg);
         }
 
         .card-back {
             background: var(--card-back);
-            color: white;
+            color: var(--card-back-text);
         }
 
         /* Win modal styles */
@@ -167,18 +202,20 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: var(--modal-overlay);
             justify-content: center;
             align-items: center;
         }
 
         .modal-content {
-            background: white;
+            background: var(--modal-content-background);
+            color: var(--text-color);
             padding: 2rem;
             border-radius: 8px;
             text-align: center;
             max-width: 400px;
             width: 90%;
+            box-shadow: 0 10px 30px var(--panel-shadow);
         }
 
         /* Best scores section */
@@ -190,9 +227,11 @@
         .scores-list {
             max-width: 600px;
             margin: 1rem auto;
-            background: white;
+            background: var(--panel-background);
+            color: var(--text-color);
             padding: 1rem;
             border-radius: 8px;
+            box-shadow: 0 2px 4px var(--panel-shadow);
         }
 
         /* Responsive design adjustments */
@@ -240,6 +279,7 @@
         <div class="grid-selector">
             <button class="grid-btn active" data-size="4">4x4 Grid</button>
             <button class="grid-btn" data-size="6">6x6 Grid</button>
+            <button id="theme-toggle" class="theme-toggle" type="button" aria-live="polite" aria-pressed="false">Dark mode</button>
         </div>
 
         <!-- Game grid -->
@@ -286,7 +326,8 @@
             modal: document.querySelector('.modal'),
             finalStats: document.querySelector('.final-stats'),
             gridButtons: document.querySelectorAll('.grid-btn'),
-            scoresList: document.querySelector('.scores-list')
+            scoresList: document.querySelector('.scores-list'),
+            themeToggle: document.querySelector('#theme-toggle')
         };
 
         // Card symbols (emojis) for both grid sizes
@@ -468,6 +509,23 @@
             }
         }
 
+        function applyTheme(theme) {
+            const isDark = theme === 'dark';
+            document.body.classList.toggle('theme-dark', isDark);
+            elements.themeToggle.setAttribute('aria-pressed', String(isDark));
+            elements.themeToggle.textContent = isDark ? 'Light mode' : 'Dark mode';
+            localStorage.setItem('memoryGameTheme', theme);
+        }
+
+        function initializeTheme() {
+            try {
+                const savedTheme = localStorage.getItem('memoryGameTheme');
+                applyTheme(savedTheme === 'dark' ? 'dark' : 'light');
+            } catch (error) {
+                applyTheme('light');
+            }
+        }
+
         // Event Listeners
         elements.grid.addEventListener('click', (e) => {
             const card = e.target.closest('.card');
@@ -487,6 +545,11 @@
             initializeGrid();
         });
 
+        elements.themeToggle.addEventListener('click', () => {
+            const nextTheme = document.body.classList.contains('theme-dark') ? 'light' : 'dark';
+            applyTheme(nextTheme);
+        });
+
         elements.gridButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const size = parseInt(button.dataset.size);
@@ -499,6 +562,7 @@
         });
 
         // Initialize game
+        initializeTheme();
         updateScoresList();
         initializeGrid();
     </script>
