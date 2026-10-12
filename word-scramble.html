@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Word Scramble</title>
+  <style>
+    :root {
+      --bg: #f5f7ff;
+      --panel: #ffffff;
+      --primary: #5b5ce6;
+      --primary-dark: #4547c9;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #f59e0b;
+      --shadow: rgba(0, 0, 0, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #eef2ff, #f8fafc);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .game-box {
+      width: 100%;
+      max-width: 520px;
+      background: var(--panel);
+      border-radius: 18px;
+      box-shadow: 0 12px 30px var(--shadow);
+      padding: 28px 22px;
+    }
+
+    h1 {
+      margin: 0 0 18px;
+      text-align: center;
+      font-size: 2rem;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .stat {
+      flex: 1;
+      background: #f3f4f6;
+      border-radius: 10px;
+      padding: 12px 10px;
+      text-align: center;
+    }
+
+    .stat-label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 1.3rem;
+      font-weight: bold;
+    }
+
+    .word-panel {
+      background: #eef2ff;
+      border-radius: 12px;
+      padding: 20px 16px;
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .word-label {
+      display: block;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .scrambled-word {
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
+      letter-spacing: 0.25em;
+      font-weight: bold;
+      color: var(--primary);
+      word-break: break-word;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    input {
+      flex: 1;
+      padding: 14px 12px;
+      border: 2px solid #d1d5db;
+      border-radius: 10px;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(91, 92, 230, 0.15);
+    }
+
+    button {
+      border: none;
+      padding: 14px 18px;
+      border-radius: 10px;
+      background: var(--primary);
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+    }
+
+    .message {
+      min-height: 24px;
+      margin-bottom: 14px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .message.success {
+      color: var(--success);
+    }
+
+    .message.error {
+      color: var(--danger);
+    }
+
+    .message.info {
+      color: var(--warning);
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .secondary {
+      background: #e5e7eb;
+      color: var(--text);
+    }
+
+    .secondary:hover {
+      background: #d1d5db;
+    }
+
+    @media (max-width: 480px) {
+      .game-box {
+        padding: 20px 16px;
+      }
+
+      .stats {
+        flex-direction: column;
+      }
+
+      .input-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-box">
+    <h1>Word Scramble</h1>
+
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-label">Score</span>
+        <span class="stat-value" id="score">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Lives</span>
+        <span class="stat-value" id="lives">3</span>
+      </div>
+    </div>
+
+    <div class="word-panel">
+      <span class="word-label">Unscramble the word</span>
+      <div id="scrambledWord" class="scrambled-word">Loading...</div>
+    </div>
+
+    <div class="input-group">
+      <input id="guessInput" type="text" placeholder="Type your guess" aria-label="Guess the word" />
+      <button id="submitBtn">Check</button>
+    </div>
+
+    <div id="message" class="message info">Start guessing!</div>
+
+    <div class="controls">
+      <button id="nextBtn" class="secondary">Next Word</button>
+      <button id="restartBtn" class="secondary">Restart</button>
+    </div>
+  </div>
+
+  <script>
+    const words = [
+      "planet", "forest", "rocket", "puzzle", "rabbit", "garden", "summer", "friend",
+      "school", "window", "monster", "sunrise", "flower", "golden", "dragon", "castle",
+      "treasure", "rainbow", "marble", "cricket", "journey", "planet", "pencil", "banana"
+    ];
+
+    let score = 0;
+    let lives = 3;
+    let currentWord = "";
+
+    const scoreEl = document.getElementById('score');
+    const livesEl = document.getElementById('lives');
+    const scrambledWordEl = document.getElementById('scrambledWord');
+    const guessInput = document.getElementById('guessInput');
+    const messageEl = document.getElementById('message');
+
+    function shuffleWord(word) {
+      const letters = word.split('');
+      for (let i = letters.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [letters[i], letters[j]] = [letters[j], letters[i]];
+      }
+
+      const shuffled = letters.join('');
+      return shuffled === word ? shuffleWord(word) : shuffled;
+    }
+
+    function setMessage(text, type = 'info') {
+      messageEl.textContent = text;
+      messageEl.className = `message ${type}`;
+    }
+
+    function getRandomWord() {
+      let nextWord = words[Math.floor(Math.random() * words.length)];
+      if (nextWord === currentWord && words.length > 1) {
+        nextWord = words[(words.indexOf(nextWord) + 1) % words.length];
+      }
+      return nextWord;
+    }
+
+    function nextRound() {
+      currentWord = getRandomWord();
+      scrambledWordEl.textContent = shuffleWord(currentWord);
+      guessInput.value = '';
+      guessInput.focus();
+    }
+
+    function updateStats() {
+      scoreEl.textContent = score;
+      livesEl.textContent = lives;
+    }
+
+    function checkGuess() {
+      const guess = guessInput.value.trim().toLowerCase();
+
+      if (!guess) {
+        setMessage('Please enter a word first.', 'error');
+        return;
+      }
+
+      if (guess === currentWord) {
+        score += 1;
+        updateStats();
+        setMessage('Correct! Great job!', 'success');
+        setTimeout(() => {
+          nextRound();
+          setMessage('New word loaded!', 'info');
+        }, 700);
+      } else {
+        lives -= 1;
+        updateStats();
+        setMessage('Incorrect! Try again.', 'error');
+
+        if (lives <= 0) {
+          setMessage('Game over! Press Restart to play again.', 'error');
+          guessInput.disabled = true;
+          return;
+        }
+
+        guessInput.value = '';
+        guessInput.focus();
+      }
+    }
+
+    function restartGame() {
+      score = 0;
+      lives = 3;
+      guessInput.disabled = false;
+      updateStats();
+      setMessage('Game restarted! Start guessing!', 'info');
+      nextRound();
+    }
+
+    document.getElementById('submitBtn').addEventListener('click', checkGuess);
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      if (lives > 0) {
+        nextRound();
+        setMessage('New word ready!', 'info');
+      }
+    });
+    document.getElementById('restartBtn').addEventListener('click', restartGame);
+
+    guessInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && lives > 0) {
+        checkGuess();
+      }
+    });
+
+    updateStats();
+    nextRound();
+  </script>
+</body>
+</html>
